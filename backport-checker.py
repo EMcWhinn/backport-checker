@@ -510,7 +510,8 @@ For Jira notifications:
 
     # Generate and display report
     report = checker.generate_report(results)
-    print("\n" + report)
+    # Replace literal \n with actual newlines for terminal display
+    print("\n" + report.replace('\\n', '\n'))
 
     # Save to file if requested
     if args.output:
