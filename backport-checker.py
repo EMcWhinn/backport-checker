@@ -62,7 +62,9 @@ class BackportChecker:
             'label_mismatches': [],
             'success_count': 0,
             'total_count': 0,
-            'date': datetime.now().isoformat()
+            'date': datetime.now().isoformat(),
+            'latest_commit': None,
+            'base_branch': None
         }
 
         print(f"Checking PRs merged since {since_date.strftime('%Y-%m-%d %H:%M')}")
@@ -83,6 +85,14 @@ class BackportChecker:
 
                 if not pulls:
                     continue
+
+                # Get latest commit SHA from this branch
+                try:
+                    branch_info = self._make_request(f'/repos/{self.repo_name}/branches/{base_branch}')
+                    results['latest_commit'] = branch_info['commit']['sha'][:7]
+                    results['base_branch'] = base_branch
+                except:
+                    pass
 
                 print(f"Found {len(pulls)} recent PRs on {base_branch} branch")
 
@@ -194,6 +204,12 @@ class BackportChecker:
         report = "# Backport Verification Report\n\n"
         report += f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M')}\\n"
         report += f"**Period:** Last {self.days_back} day(s)\\n"
+
+        # Add latest commit info if available
+        if results.get('latest_commit') and results.get('base_branch'):
+            report += f"**Branch:** {results['base_branch']}\\n"
+            report += f"**Latest Commit:** {results['latest_commit']}\\n"
+
         report += f"**PRs Checked:** {results['total_count']}\\n"
         report += f"**Issues Found:** {len(results['missing_backports']) + len(results['label_mismatches'])}\\n\\n"
 
