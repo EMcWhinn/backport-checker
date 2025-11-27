@@ -1,4 +1,4 @@
-# Backport Checker
+# Backport checker
 
 Automated tool for verifying that merged pull requests are properly backported to release branches.
 
