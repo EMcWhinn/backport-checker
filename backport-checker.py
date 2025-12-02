@@ -110,7 +110,14 @@ class BackportChecker:
                     results['checked_prs'].append(pr_info)
 
                     # Check for issues
-                    if set(pr_info['expected_backports']) != set(pr_info['backported_to']):
+                    # Only report label mismatches if actual backport PRs weren't found
+                    # If backport PRs exist, we don't care about label inconsistencies
+                    expected_set = set(pr_info['expected_backports'])
+                    backported_set = set(pr_info['backported_to'])
+                    prs_found_set = set(pr_info['backport_prs_found'])
+
+                    # Only flag as mismatch if there's a discrepancy AND no PRs were found
+                    if expected_set != backported_set and not prs_found_set:
                         results['label_mismatches'].append(pr_info)
 
                     if pr_info['expected_backports'] and not pr_info['backported_to']:
@@ -144,7 +151,8 @@ class BackportChecker:
             'url': pr['html_url'],
             'labels': [label['name'] for label in pr.get('labels', [])],
             'backported_to': [],
-            'expected_backports': []
+            'expected_backports': [],
+            'backport_prs_found': []  # Track versions where actual PRs were found
         }
 
         # Check labels for expected backports
@@ -186,12 +194,16 @@ class BackportChecker:
                     if f"#{pr['number']}" in backport_title or f"(#{pr['number']})" in backport_title:
                         if version not in pr_info['backported_to']:
                             pr_info['backported_to'].append(version)
+                        if version not in pr_info['backport_prs_found']:
+                            pr_info['backport_prs_found'].append(version)
                         break
 
                     # Check for Jira ticket reference if we found one
                     if jira_ticket and jira_ticket in backport_title:
                         if version not in pr_info['backported_to']:
                             pr_info['backported_to'].append(version)
+                        if version not in pr_info['backport_prs_found']:
+                            pr_info['backport_prs_found'].append(version)
                         break
             except Exception as e:
                 # Continue even if we can't check backport PRs for a specific version
