@@ -189,9 +189,17 @@ class BackportChecker:
                         continue
 
                     backport_title = backport_pr.get('title', '')
+                    backport_body = backport_pr.get('body', '') or ''
 
-                    # Check for PR number reference (e.g., "#5146" or "(#5146)")
-                    if f"#{pr['number']}" in backport_title or f"(#{pr['number']})" in backport_title:
+                    # Check for PR number reference (e.g., "#5146" or "(#5146)" or "PR 5146")
+                    pr_patterns = [
+                        f"#{pr['number']}",
+                        f"(#{pr['number']})",
+                        f"PR {pr['number']}",
+                        f"PR #{pr['number']}"
+                    ]
+
+                    if any(pattern in backport_title or pattern in backport_body for pattern in pr_patterns):
                         if version not in pr_info['backported_to']:
                             pr_info['backported_to'].append(version)
                         if version not in pr_info['backport_prs_found']:
@@ -199,7 +207,7 @@ class BackportChecker:
                         break
 
                     # Check for Jira ticket reference if we found one
-                    if jira_ticket and jira_ticket in backport_title:
+                    if jira_ticket and (jira_ticket in backport_title or jira_ticket in backport_body):
                         if version not in pr_info['backported_to']:
                             pr_info['backported_to'].append(version)
                         if version not in pr_info['backport_prs_found']:
