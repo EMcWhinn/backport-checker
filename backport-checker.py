@@ -207,7 +207,12 @@ class BackportChecker:
                         break
 
                     # Check for Jira ticket reference if we found one
+                    # But skip if the backport PR already references a different main PR number,
+                    # since multiple PRs can share the same Jira ticket
                     if jira_ticket and (jira_ticket in backport_title or jira_ticket in backport_body):
+                        other_pr_ref = re.search(r'#(\d+)', backport_title) or re.search(r'#(\d+)', backport_body)
+                        if other_pr_ref and int(other_pr_ref.group(1)) != pr['number']:
+                            continue  # This backport PR belongs to a different main PR
                         if version not in pr_info['backported_to']:
                             pr_info['backported_to'].append(version)
                         if version not in pr_info['backport_prs_found']:
